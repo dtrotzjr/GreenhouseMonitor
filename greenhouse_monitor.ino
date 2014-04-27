@@ -36,6 +36,7 @@ This example code is in the public domain.
 #include <YunClient.h> 
 #include <dht22.h>
 #include <FileIO.h>
+#include <EEPROM.h>
 
 // Listen on default port 5555, the webserver on the Yun
 // will forward there all the HTTP requests for us.
@@ -63,11 +64,17 @@ float greenhouseHumidity = 0.0;
 float greenhouseTemperature = 0.0;
 float outsideHumidity = 0.0;
 float outsideTemperature = 0.0;
-  
+
 bool readSensorDataNextLoop = false;
 bool sendToSensorDataToClient = false;
 bool writeSensorDataToFile = false;
 bool freshSensorDataAvailable = false;
+  
+const int  EEPROM_MARKER            = 0xA0A0FAFA;
+const int  EEPROM_MARKER_ADDRESS    = 0;                          // 4 Bytes (0,1,2,3)
+const byte EEPROM_SERIES            = 'A';
+const int  EEPROM_SERIES_ADDRESS    = EEPROM_MARKER_ADDRESS + 4;  // 2 Bytes (4,5)
+const int  EEPROM_ITERATOR_ADDRESS  = EEPROM_SERIES_ADDRESS + 2;  // 4 bytes (6,7,8,9,10,11,12,13)
   
 void setup() {
 	Serial.begin(9600);
@@ -231,6 +238,8 @@ void loop() {
 				String outputLine = "";
 				outputLine += getUnixTime();
 				outputLine += ", ";
+                                outputLine += getTimeString();
+				outputLine += ", ";                                
 				appendSensorDataToString(greenhouseHumidity, greenhouseTemperature, &outputLine);
 				outputLine += ", ";  
 				appendSensorDataToString(outsideHumidity, outsideTemperature, &outputLine);  
@@ -250,7 +259,9 @@ void loop() {
 			command.trim();        //kill whitespace
 			// is "temperature" command?
 			if (command == "temperature") {
+                                static int i = 0;
                                 client.print("Sensing...");
+                                client.print(i++);
 				readSensorDataNextLoop = true;
 				sendToSensorDataToClient = true;
 			}
