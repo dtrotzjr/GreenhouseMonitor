@@ -4,7 +4,9 @@
  * David Trotz
  * 04/27/2014
  */
+#include <Arduino.h>
 #include <EEPROM.h>
+#include "EEPROM_Utils.h"
 
 int32_t EEPROM_Utils::readInt32AtAddress(int address) {
     byte b3 = EEPROM.read(address + 0);

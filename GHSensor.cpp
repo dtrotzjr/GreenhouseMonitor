@@ -7,15 +7,14 @@
 
 #include "GHSensor.h"
 
-GHSensor::GHSensor(int powerPin, int dataPin, const char* name) {
-	_powerPin = powerPin;
+GHSensor::GHSensor(int powerPin, int dataPin, const char* name) :_powerPin(powerPin) {
 	pinMode(_powerPin,OUTPUT);
 	digitalWrite(_powerPin, LOW);
-	DHT22_GH.attach(dataPin);
+	_sensor.attach(dataPin);
 	String tmp = String(name);
-	int nameLen = tmp->length() + 1;
-	_name = calloc(nameLen, sizeof(char));
-	tmp->toCharArray(_name, nameLen);
+	int nameLen = tmp.length() + 1;
+	_name = (char*)calloc(nameLen, sizeof(char));
+	tmp.toCharArray(_name, nameLen);
 	_humidity = 0.0f;
 	_temperature = 0.0f;
 }
@@ -32,10 +31,14 @@ float GHSensor::GetHumidity() {
 	return _humidity;
 }
 
+const char* GHSensor::GetName() {
+	return _name;
+}	
+
 void GHSensor::BeginSampling() {
 	_humidityTotal = 0.0;
 	_temperatureTotal = 0.0;
-	_totalSamples 0;
+	_totalSamples = 0;
 }
 
 void GHSensor::SampleSensor() {
@@ -43,10 +46,10 @@ void GHSensor::SampleSensor() {
     digitalWrite(_powerPin, HIGH);
 	// The sensor needs 2s to initialize
     delay(2000);
-    if (DHT22_GH.read() == 0)
+    if (_sensor.read() == 0)
     {
-        _humidityTotal += (float)DHT22_GH.humidity;
-        _temperatureTotal += DHT22_GH.fahrenheit();
+        _humidityTotal += (float)_sensor.humidity;
+        _temperatureTotal += _sensor.fahrenheit();
     }
     digitalWrite(_powerPin, LOW);  
 	_totalSamples++;

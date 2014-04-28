@@ -41,7 +41,9 @@ This example code is in the public domain.
 #include "GHSensor.h"
 #include "GHState.h"
   
+const int INITIALIZED_LED_PIN = 13;
 GHState* greenhouseStateMachine;  
+
 void setup() { 
     pinMode(INITIALIZED_LED_PIN,OUTPUT);
     digitalWrite(INITIALIZED_LED_PIN, LOW); 

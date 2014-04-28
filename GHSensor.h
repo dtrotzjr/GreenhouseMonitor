@@ -4,6 +4,8 @@
  * David Trotz
  * 04/27/2014
  */
+#ifndef __GHSENSOR_H__
+#define __GHSENSOR_H__
 
 #include <dht22.h>
 
@@ -13,7 +15,7 @@ public:
 	~GHSensor();
 	float GetTemperature();
 	float GetHumidity();
-	
+	const char* GetName();
 	// Because we need to wait 2 seconds between samples and have more than one
 	// sensor to sample we shouldn't do all the samples at once so that while
 	// we are waiting we can sample other sensors. So we will BeginSampling()
@@ -27,7 +29,7 @@ public:
 	
 private:
 	const int _powerPin;
-	const char* _name;
+	char* _name;
 	float _humidity;
 	float _temperature;
 	
@@ -37,3 +39,5 @@ private:
 	
 	dht22 _sensor;
 };
+
+#endif
