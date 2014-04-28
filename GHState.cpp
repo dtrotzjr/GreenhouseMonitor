@@ -48,8 +48,8 @@ GHState::GHState() {
     FileSystem.begin(); 
 
     // Temperature and Humidity Sensor Setup
-    _innerSensor = new GHSensor(DHT22_GH_POWER_PIN, DHT22_GH_SENSE_PIN, "Greenhouse");
-    _outerSensor = new GHSensor(DHT22_OT_POWER_PIN, DHT22_OT_SENSE_PIN, "Outside");
+    _innerSensor = CreateGHSensor(DHT22_GH_POWER_PIN, DHT22_GH_SENSE_PIN, "Greenhouse");
+    _outerSensor = CreateGHSensor(DHT22_OT_POWER_PIN, DHT22_OT_SENSE_PIN, "Outside");
   
     // Listen for incoming connection only from localhost
     // (no one from the external network could connect)
@@ -58,8 +58,6 @@ GHState::GHState() {
 }
 
 GHState::~GHState() {
-    delete _innerSensor;
-    delete _outerSensor;
 }
 
 void GHState::Step() {
@@ -185,21 +183,21 @@ String GHState::_getFileIndex() {
 void GHState::_sendSensorDataToClient(GHSensor* sensor, YunClient client)
 {
     client.print("<br>");
-    client.print(sensor->GetName()); 
+    client.print(GetName(sensor)); 
     client.print(" Humidity (%): ");
-    client.print(sensor->GetHumidity());
+    client.print(GetHumidity(sensor));
     client.print("<br>");
-    client.print(sensor->GetName()); 
+    client.print(GetName(sensor)); 
     client.print("Temperature: ");
-    client.print(sensor->GetTemperature());
+    client.print(GetTemperature(sensor));
     client.print(" °F");
 }
 
 void GHState::_appendSensorDataToString(GHSensor* sensor, String* outputLine)
 {
-    *outputLine += sensor->GetHumidity();
+    *outputLine += GetHumidity(sensor);
     *outputLine += ",";
-    *outputLine += sensor->GetTemperature();
+    *outputLine += GetTemperature(sensor);
 }
 
 String GHState::_getTimeAsString()
@@ -228,13 +226,13 @@ long GHState::_getTimeAsLong()
 
 void GHState::_sampleSensors()
 {
-    _innerSensor->BeginSampling();
-    _outerSensor->BeginSampling();
+    BeginSampling(_innerSensor);
+    BeginSampling(_outerSensor);
     for (int i = 0; i < READS_PER_SAMPLE; i++)
     {
-        _innerSensor->SampleSensor();
-        _outerSensor->SampleSensor();
+        SampleSensor(_innerSensor);
+        SampleSensor(_outerSensor);
     }
-    _innerSensor->EndSampling();
-    _outerSensor->EndSampling();
+    EndSampling(_innerSensor);
+    EndSampling(_outerSensor);
 }
