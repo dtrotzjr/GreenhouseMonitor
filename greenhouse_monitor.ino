@@ -45,10 +45,11 @@ GHState* greenhouseStateMachine;
 void setup() { 
     pinMode(INITIALIZED_LED_PIN,OUTPUT);
     digitalWrite(INITIALIZED_LED_PIN, LOW); 
-    greenhouseStateMachine = GHState_Create();
     // Bridge startup  
     Bridge.begin();
-    FileSystem.begin(); 
+    FileSystem.begin();
+    DEBUG_LOG("Starting...")
+    greenhouseStateMachine = GHState_Create();
     digitalWrite(13, HIGH);
 }
 

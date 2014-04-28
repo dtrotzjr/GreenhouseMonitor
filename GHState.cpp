@@ -36,9 +36,16 @@ const int EEPROM_ITERATOR_ADDRESS = EEPROM_MARKER_ADDRESS + 4;
 
 const int ITERATIONS_PER_FILE = 288;
 
-const char* LOGFILE_PATH = "/mnt/sd/greenhouse/logs";
-const char* LOGFILE_PREFIX = "greenyun";
+const char* LOGFILE_PATH = "/mnt/sd/greenhouse/logs/";
+const char* LOGFILE_PREFIX = "greenyun_";
 
+#ifdef ENABLE_DEBUG_LOG
+void _debugLog(const char* logMsg) {
+    File logFile = FileSystem.open("/mnt/sd/log.txt", FILE_APPEND);
+    logFile.println(logMsg);
+    logFile.close();
+}
+#endif
 
 GHState* GHState_Create() {
     GHState* self = (GHState*)calloc(1, sizeof(GHState));
@@ -49,19 +56,27 @@ GHState* GHState_Create() {
   
     // Listen for incoming connection only from localhost
     // (no one from the external network could connect)
-    self->_server.listenOnLocalhost();
-    self->_server.begin();
+    self->_server = new YunServer();
+    self->_server->listenOnLocalhost();
+    self->_server->begin();
+    DEBUG_LOG("GHState_Create")  
 }
 
 void GHState_Step(GHState* self) {
+    DEBUG_LOG("GHState_Step")
     if (self->_readSensorDataNextLoop) {
+        DEBUG_LOG("_readSensorDataNextLoop")
         _sampleSensors(self);
         self->_readSensorDataNextLoop = false;
         self->_freshSensorDataAvailable = true;
+        if(self->_readSensorDataNextLoop)
+            {DEBUG_LOG("OUCH!!!")}
     } else if (self->_freshSensorDataAvailable) {
+        DEBUG_LOG("_freshSensorDataAvailable")
         // Get clients coming from server
         if (self->_sendToSensorDataToClient) {
-            YunClient client = self->_server.accept();
+            DEBUG_LOG("_sendToSensorDataToClient")
+            YunClient client = self->_server->accept();
             if (client) {
                 // get the time from the server:
                 String timeString = _getTimeAsString();
@@ -85,6 +100,7 @@ void GHState_Step(GHState* self) {
         }
       
         if (self->_writeSensorDataToFile) {
+            DEBUG_LOG("_writeSensorDataToFile")
             _getCurrentLogFilename(self->_logFilename);
             File dataFile = FileSystem.open(self->_logFilename, FILE_APPEND);
             if (dataFile) {
@@ -104,13 +120,15 @@ void GHState_Step(GHState* self) {
         }
         self->_freshSensorDataAvailable = false;
     } else {
-        YunClient client = self->_server.accept();
+        DEBUG_LOG("*****")
+        YunClient client = self->_server->accept();
         if (client) {
             // read the command
             String command = client.readString();
             command.trim();        //kill whitespace
             // is "temperature" command?
             if (command == "temperature") {
+                DEBUG_LOG("web client wants update")
                 static int i = 0;
                 client.print("Sensing...");
                 client.print(i++);
@@ -119,7 +137,8 @@ void GHState_Step(GHState* self) {
             }
             client.stop();
         }    
-        if (self->_lastUpdate == 0 || (millis() - self->_lastUpdate) > 300000) {
+        if (self->_lastUpdate == 0 || (millis() - self->_lastUpdate) > 2000/*300000*/) {
+            DEBUG_LOG("*** time to update ***")
             self->_readSensorDataNextLoop = true;
             self->_writeSensorDataToFile = true;      
         }
@@ -134,10 +153,12 @@ void _getCurrentLogFilename(char* logFilename) {
     tmp += _getFilePostFix();
     tmp  += ".csv";
     tmp.toCharArray(logFilename, MAX_FILENAME_LEN);
+    DEBUG_LOG(logFilename)
 }
 
 void _sampleSensors(GHState* self)
 {
+    DEBUG_LOG("_sampleSensors")            
     GHSensor_BeginSampling(self->_innerSensor);
     GHSensor_BeginSampling(self->_outerSensor);
     for (int i = 0; i < READS_PER_SAMPLE; i++)

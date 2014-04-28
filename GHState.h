@@ -8,9 +8,18 @@
 #define __GHSTATE_H__
 
 #include <YunServer.h>
+#include <FileIO.h>
 #include "GHSensor.h"
 
 #define MAX_FILENAME_LEN 64
+
+#define ENABLE_DEBUG_LOG
+#ifdef ENABLE_DEBUG_LOG
+void _debugLog(const char* logMsg);
+#define DEBUG_LOG(log) { _debugLog(log); }
+#else
+#define DEBUG_LOG(log)
+#endif
 
 typedef struct {
     char _logFilename[MAX_FILENAME_LEN];    
@@ -23,7 +32,7 @@ typedef struct {
     bool _writeSensorDataToFile;
     bool _freshSensorDataAvailable;
     
-    YunServer _server;
+    YunServer* _server;
     GHSensor* _innerSensor;
     GHSensor* _outerSensor;
 } GHState;

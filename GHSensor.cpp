@@ -6,6 +6,7 @@
  */
 
 #include "GHSensor.h"
+#include "GHState.h"
 
 GHSensor* GHSensor_Create(int powerPin, int dataPin, const char* name) {
 	GHSensor* self = (GHSensor*)calloc(1, sizeof(GHSensor));
@@ -19,6 +20,7 @@ GHSensor* GHSensor_Create(int powerPin, int dataPin, const char* name) {
 	tmp.toCharArray(self->_name, nameLen);
 	self->_humidity = 0.0f;
 	self->_temperature = 0.0f;
+    DEBUG_LOG("GHSensor_Create")
 }
 
 float GHSensor_GetTemperature(GHSensor* self){
