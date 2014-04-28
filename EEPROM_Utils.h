@@ -9,12 +9,9 @@
 
 #include <Arduino.h>
 
-class EEPROM_Utils {
-public:
-    static int32_t readInt32AtAddress(int address);
-    static int64_t readInt64AtAddress(int address);
-    static void writeInt32ToAddress(int address, int32_t value);
-    static void writeInt64ToAddress(int address, int64_t value);
-};
+int32_t readInt32AtAddressInEEPROM(int address);
+int64_t readInt64AtAddressInEEPROM(int address);
+void writeInt32ToAddressInEEPROM(int address, int32_t value);
+void writeInt64ToAddressInEEPROM(int address, int64_t value);
 
 #endif

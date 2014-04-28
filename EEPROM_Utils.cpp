@@ -8,7 +8,7 @@
 #include <EEPROM.h>
 #include "EEPROM_Utils.h"
 
-int32_t EEPROM_Utils::readInt32AtAddress(int address) {
+int32_t readInt32AtAddressInEEPROM(int address) {
     byte b3 = EEPROM.read(address + 0);
     byte b2 = EEPROM.read(address + 1);
     byte b1 = EEPROM.read(address + 2);
@@ -17,7 +17,7 @@ int32_t EEPROM_Utils::readInt32AtAddress(int address) {
             ((int32_t)b1 << 8)  | (int32_t)b0;
 }
 
-int64_t EEPROM_Utils::readInt64AtAddress(int address) {
+int64_t readInt64AtAddressInEEPROM(int address) {
     byte b7 = EEPROM.read(address + 0);
     byte b6 = EEPROM.read(address + 1);
     byte b5 = EEPROM.read(address + 2);
@@ -34,14 +34,14 @@ int64_t EEPROM_Utils::readInt64AtAddress(int address) {
 }
 
 
-void EEPROM_Utils::writeInt32ToAddress(int address, int32_t value) {
+void writeInt32ToAddressInEEPROM(int address, int32_t value) {
     EEPROM.write(address, (byte)((value >> 24) & 0x000000FF));
     EEPROM.write(address, (byte)((value >> 16) & 0x000000FF));
     EEPROM.write(address, (byte)((value >>  8) & 0x000000FF));
     EEPROM.write(address, (byte)(value         & 0x000000FF));
 }
 
-void EEPROM_Utils::writeInt64ToAddress(int address, int64_t value) {
+void writeInt64ToAddressInEEPROM(int address, int64_t value) {
     EEPROM.write(address, (byte)((value >> 56) & 0x000000FF));
     EEPROM.write(address, (byte)((value >> 48) & 0x000000FF));
     EEPROM.write(address, (byte)((value >> 40) & 0x000000FF));

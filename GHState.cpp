@@ -149,15 +149,15 @@ const char* GHState::_getCurrentLogFilename() {
 
 int64_t GHState::_getCurrentIteration() {
     int64_t iteration = 0;
-    int32_t marker = EEPROM_Utils::readInt32AtAddress(EEPROM_MARKER_ADDRESS);
+    int32_t marker = readInt32AtAddressInEEPROM(EEPROM_MARKER_ADDRESS);
     if (marker == EEPROM_MARKER)
     {
-        iteration = EEPROM_Utils::readInt64AtAddress(EEPROM_ITERATOR_ADDRESS);
+        iteration = readInt64AtAddressInEEPROM(EEPROM_ITERATOR_ADDRESS);
     }
     else
     {
-        EEPROM_Utils::writeInt32ToAddress(EEPROM_MARKER_ADDRESS, EEPROM_MARKER);
-        EEPROM_Utils::writeInt32ToAddress(EEPROM_MARKER_ADDRESS, iteration);        
+        writeInt32ToAddressInEEPROM(EEPROM_MARKER_ADDRESS, EEPROM_MARKER);
+        writeInt32ToAddressInEEPROM(EEPROM_MARKER_ADDRESS, iteration);        
     }
     return iteration;
 }
