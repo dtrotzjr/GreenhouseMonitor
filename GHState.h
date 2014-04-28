@@ -19,8 +19,7 @@ public:
     
     void Step();
 private:
-    String _getFileIndex();
-    int64_t _getCurrentIteration();
+    String _getFilePostFix();
     const char* _getCurrentLogFilename();
     void _sampleSensors();
     long _getTimeAsLong();

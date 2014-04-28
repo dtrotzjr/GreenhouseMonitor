@@ -29,14 +29,12 @@ by Tom Igoe
 
 
 This example code is in the public domain.
-// 32748
 */
 #include <Bridge.h>
 #include <YunServer.h>
 #include <YunClient.h> 
 #include <dht22.h>
 #include <FileIO.h>
-#include <avr/eeprom.h>
 
 #include "GHSensor.h"
 #include "GHState.h"

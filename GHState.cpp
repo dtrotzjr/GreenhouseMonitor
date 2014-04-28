@@ -30,7 +30,6 @@ const int ITERATIONS_PER_FILE = 288;
 
 const char* LOGFILE_PATH = "/mnt/sd/greenhouse/logs";
 const char* LOGFILE_PREFIX = "greenyun";
-const char* LOGFILE_SERIES_INFIX = "_A_";
 
 
 GHState::GHState() {
@@ -138,46 +137,21 @@ void GHState::Step() {
 const char* GHState::_getCurrentLogFilename() {
     String tmp = String(LOGFILE_PATH);
     tmp += LOGFILE_PREFIX;
-    tmp += LOGFILE_SERIES_INFIX;
-    tmp += _getFileIndex();
+    tmp += _getFilePostFix();
     tmp  += ".csv";
     tmp.toCharArray(_logFilename, MAX_FILENAME_LEN);
     return _logFilename;
 }
 
-int64_t GHState::_getCurrentIteration() {
-    int64_t iteration = 0;
-    int32_t marker = readInt32AtAddressInEEPROM(EEPROM_MARKER_ADDRESS);
-    if (marker == EEPROM_MARKER)
-    {
-        iteration = readInt64AtAddressInEEPROM(EEPROM_ITERATOR_ADDRESS);
+String GHState::_getFilePostFix() {
+    Process time;
+    time.runShellCommand("date -u +%Y_%U");
+    String timeString = "";
+    while(time.available()) {
+        char c = time.read();
+        timeString += c;
     }
-    else
-    {
-        writeInt32ToAddressInEEPROM(EEPROM_MARKER_ADDRESS, EEPROM_MARKER);
-        writeInt32ToAddressInEEPROM(EEPROM_MARKER_ADDRESS, iteration);        
-    }
-    return iteration;
-}
-
-String GHState::_getFileIndex() {
-    String fileIndexStr;
-    int index = 0;    
-    int64_t iteration = _getCurrentIteration();
-    index = iteration / ITERATIONS_PER_FILE;
-    
-    // Pad the string with leading 0's since Arduino does not provide printf
-    if (iteration < 10) {
-        fileIndexStr = "0000";
-    } else if (iteration < 100) {
-        fileIndexStr = "000";
-    } else if (iteration < 1000) {
-        fileIndexStr = "00";
-    } else if (iteration < 10000) {
-        fileIndexStr = "0";
-    }
-    
-    fileIndexStr += index;
+    return timeString;
 }
 
 void GHState::_sendSensorDataToClient(GHSensor* sensor, YunClient client)
