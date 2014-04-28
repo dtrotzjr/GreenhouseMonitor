@@ -13,6 +13,14 @@
 #include <FileIO.h>
 #include <EEPROM.h>
 
+static String _getFilePostFix();
+static long _getTimeAsLong();
+static String _getTimeAsString();
+static void _getCurrentLogFilename(char* logFilename);
+static void _appendSensorDataToString(GHSensor* sensor, String* outputLine);
+static void _sendSensorDataToClient(GHSensor* sensor, YunClient client);
+static void _sampleSensors(GHState* self);
+
 const int DHT22_GH_POWER_PIN = 2;
 const int DHT22_GH_SENSE_PIN = 3;
 const int DHT22_OT_POWER_PIN = 4;
@@ -32,42 +40,28 @@ const char* LOGFILE_PATH = "/mnt/sd/greenhouse/logs";
 const char* LOGFILE_PREFIX = "greenyun";
 
 
-GHState::GHState() {
-    _lastUpdate = 0;
-    _hits = 0;
-    _logFilename[0] = 0;
-
-    _readSensorDataNextLoop      = false;
-    _sendToSensorDataToClient    = false;
-    _writeSensorDataToFile       = false;
-    _freshSensorDataAvailable    = false;
-    
-    // Bridge startup  
-    Bridge.begin();
-    FileSystem.begin(); 
+GHState* GHState_Create() {
+    GHState* self = (GHState*)calloc(1, sizeof(GHState));
 
     // Temperature and Humidity Sensor Setup
-    _innerSensor = CreateGHSensor(DHT22_GH_POWER_PIN, DHT22_GH_SENSE_PIN, "Greenhouse");
-    _outerSensor = CreateGHSensor(DHT22_OT_POWER_PIN, DHT22_OT_SENSE_PIN, "Outside");
+    self->_innerSensor = GHSensor_Create(DHT22_GH_POWER_PIN, DHT22_GH_SENSE_PIN, "Greenhouse");
+    self->_outerSensor = GHSensor_Create(DHT22_OT_POWER_PIN, DHT22_OT_SENSE_PIN, "Outside");
   
     // Listen for incoming connection only from localhost
     // (no one from the external network could connect)
-    _server.listenOnLocalhost();
-    _server.begin();
+    self->_server.listenOnLocalhost();
+    self->_server.begin();
 }
 
-GHState::~GHState() {
-}
-
-void GHState::Step() {
-    if (_readSensorDataNextLoop) {
-        _sampleSensors();
-        _readSensorDataNextLoop = false;
-        _freshSensorDataAvailable = true;
-    } else if (_freshSensorDataAvailable) {
+void GHState_Step(GHState* self) {
+    if (self->_readSensorDataNextLoop) {
+        _sampleSensors(self);
+        self->_readSensorDataNextLoop = false;
+        self->_freshSensorDataAvailable = true;
+    } else if (self->_freshSensorDataAvailable) {
         // Get clients coming from server
-        if (_sendToSensorDataToClient) {
-            YunClient client = _server.accept();
+        if (self->_sendToSensorDataToClient) {
+            YunClient client = self->_server.accept();
             if (client) {
                 // get the time from the server:
                 String timeString = _getTimeAsString();
@@ -75,42 +69,42 @@ void GHState::Step() {
                 client.print("Current time on the Yun: ");
                 client.println(timeString);      
                 client.print("<hr>");      
-                _sendSensorDataToClient(_innerSensor, client);
+                _sendSensorDataToClient(self->_innerSensor, client);
                 client.print("<br>"); 
-                _sendSensorDataToClient(_outerSensor, client);
+                _sendSensorDataToClient(self->_outerSensor, client);
                 client.print("<br>");       
                 client.print("<hr>");
                 client.print("<br>Hits so far: ");
-                client.print(_hits);
+                client.print(self->_hits);
             }
       
             // Close connection and free resources.
             client.stop();
-            _hits++;      
-            _sendToSensorDataToClient = false;
+            self->_hits++;      
+            self->_sendToSensorDataToClient = false;
         }
       
-        if (_writeSensorDataToFile) {
-            File dataFile = FileSystem.open(_getCurrentLogFilename(), FILE_APPEND);
+        if (self->_writeSensorDataToFile) {
+            _getCurrentLogFilename(self->_logFilename);
+            File dataFile = FileSystem.open(self->_logFilename, FILE_APPEND);
             if (dataFile) {
                 String outputLine = "";
                 outputLine += _getTimeAsLong();
                 outputLine += ", ";
                 outputLine += _getTimeAsString();
                 outputLine += ", ";                                
-                _appendSensorDataToString(_innerSensor, &outputLine);
+                _appendSensorDataToString(self->_innerSensor, &outputLine);
                 outputLine += ", ";  
-                _appendSensorDataToString(_outerSensor, &outputLine);  
+                _appendSensorDataToString(self->_outerSensor, &outputLine);  
                 dataFile.println(outputLine);
-                _lastUpdate = millis();          
+                self->_lastUpdate = millis();          
             }
             dataFile.close();
-            _writeSensorDataToFile = false;
+            self->_writeSensorDataToFile = false;
         }
-
-        _freshSensorDataAvailable = false;
+        self->_freshSensorDataAvailable = false;
     } else {
-        YunClient client = _server.accept();
+        YunClient client = self->_server.accept();
         if (client) {
             // read the command
             String command = client.readString();
@@ -120,30 +114,42 @@ void GHState::Step() {
                 static int i = 0;
                 client.print("Sensing...");
                 client.print(i++);
-                _readSensorDataNextLoop = true;
-                _sendToSensorDataToClient = true;
+                self->_readSensorDataNextLoop = true;
+                self->_sendToSensorDataToClient = true;
             }
             client.stop();
         }    
-        if (_lastUpdate == 0 || (millis() - _lastUpdate) > 300000) {
-            _readSensorDataNextLoop = true;
-            _writeSensorDataToFile = true;      
+        if (self->_lastUpdate == 0 || (millis() - self->_lastUpdate) > 300000) {
+            self->_readSensorDataNextLoop = true;
+            self->_writeSensorDataToFile = true;      
         }
   
         delay(50); // Poll every 50ms
     }
 }
 
-const char* GHState::_getCurrentLogFilename() {
+void _getCurrentLogFilename(char* logFilename) {
     String tmp = String(LOGFILE_PATH);
     tmp += LOGFILE_PREFIX;
     tmp += _getFilePostFix();
     tmp  += ".csv";
-    tmp.toCharArray(_logFilename, MAX_FILENAME_LEN);
-    return _logFilename;
+    tmp.toCharArray(logFilename, MAX_FILENAME_LEN);
 }
 
-String GHState::_getFilePostFix() {
+void _sampleSensors(GHState* self)
+{
+    GHSensor_BeginSampling(self->_innerSensor);
+    GHSensor_BeginSampling(self->_outerSensor);
+    for (int i = 0; i < READS_PER_SAMPLE; i++)
+    {
+        GHSensor_SampleSensor(self->_innerSensor);
+        GHSensor_SampleSensor(self->_outerSensor);
+    }
+    GHSensor_EndSampling(self->_innerSensor);
+    GHSensor_EndSampling(self->_outerSensor);
+}
+
+String _getFilePostFix() {
     Process time;
     time.runShellCommand("date -u +%Y_%U");
     String timeString = "";
@@ -154,27 +160,27 @@ String GHState::_getFilePostFix() {
     return timeString;
 }
 
-void GHState::_sendSensorDataToClient(GHSensor* sensor, YunClient client)
+void _sendSensorDataToClient(GHSensor* sensor, YunClient client)
 {
     client.print("<br>");
-    client.print(GetName(sensor)); 
+    client.print(GHSensor_GetName(sensor)); 
     client.print(" Humidity (%): ");
-    client.print(GetHumidity(sensor));
+    client.print(GHSensor_GetHumidity(sensor));
     client.print("<br>");
-    client.print(GetName(sensor)); 
+    client.print(GHSensor_GetName(sensor)); 
     client.print("Temperature: ");
-    client.print(GetTemperature(sensor));
+    client.print(GHSensor_GetTemperature(sensor));
     client.print(" °F");
 }
 
-void GHState::_appendSensorDataToString(GHSensor* sensor, String* outputLine)
+void _appendSensorDataToString(GHSensor* sensor, String* outputLine)
 {
-    *outputLine += GetHumidity(sensor);
+    *outputLine += GHSensor_GetHumidity(sensor);
     *outputLine += ",";
-    *outputLine += GetTemperature(sensor);
+    *outputLine += GHSensor_GetTemperature(sensor);
 }
 
-String GHState::_getTimeAsString()
+String _getTimeAsString()
 {
     Process time;
     time.runShellCommand("date");
@@ -186,7 +192,7 @@ String GHState::_getTimeAsString()
     return timeString;
 }
 
-long GHState::_getTimeAsLong()
+long _getTimeAsLong()
 {
     Process time;
     time.runShellCommand("date -u +%s");
@@ -196,17 +202,4 @@ long GHState::_getTimeAsLong()
         timeString += c;
     }
     return timeString.toInt();
-}
-
-void GHState::_sampleSensors()
-{
-    BeginSampling(_innerSensor);
-    BeginSampling(_outerSensor);
-    for (int i = 0; i < READS_PER_SAMPLE; i++)
-    {
-        SampleSensor(_innerSensor);
-        SampleSensor(_outerSensor);
-    }
-    EndSampling(_innerSensor);
-    EndSampling(_outerSensor);
 }

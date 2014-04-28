@@ -12,21 +12,7 @@
 
 #define MAX_FILENAME_LEN 64
 
-class GHState {
-public:
-    GHState();
-    ~GHState();    
-    
-    void Step();
-private:
-    String _getFilePostFix();
-    const char* _getCurrentLogFilename();
-    void _sampleSensors();
-    long _getTimeAsLong();
-    String _getTimeAsString();
-    void _appendSensorDataToString(GHSensor* sensor, String* outputLine);
-    void _sendSensorDataToClient(GHSensor* sensor, YunClient client);
-    
+typedef struct {
     char _logFilename[MAX_FILENAME_LEN];    
     unsigned long _lastUpdate;
     long _hits;
@@ -40,6 +26,10 @@ private:
     YunServer _server;
     GHSensor* _innerSensor;
     GHSensor* _outerSensor;
-};
+} GHState;
+
+GHState* GHState_Create();
+
+void GHState_Step(GHState* self);
 
 #endif

@@ -22,19 +22,19 @@ typedef struct {
 	dht22 _sensor;
 } GHSensor;
 
-GHSensor* CreateGHSensor(int powerPin, int dataPin, const char* name);
-float GetTemperature(GHSensor* self);
-float GetHumidity(GHSensor* self);
-const char* GetName(GHSensor* self);
+GHSensor* GHSensor_Create(int powerPin, int dataPin, const char* name);
+float GHSensor_GetTemperature(GHSensor* self);
+float GHSensor_GetHumidity(GHSensor* self);
+const char* GHSensor_GetName(GHSensor* self);
 // Because we need to wait 2 seconds between samples and have more than one
 // sensor to sample we shouldn't do all the samples at once so that while
-// we are waiting we can sample other sensors. So we will BeginSampling()
-// on each sensor and SampleSensor() on each sensor in order, by the time
+// we are waiting we can sample other sensors. So we will GHSensor_BeginSampling()
+// on each sensor and GHSensor_SampleSensor() on each sensor in order, by the time
 // we come back to the initial sensor at least 2 seconds has passed and we
-// can sample it again. When we are done we EndSampling() and we can
+// can sample it again. When we are done we GHSensor_EndSampling() and we can
 // average the samples for a more accurate reading.
-void BeginSampling(GHSensor* self);
-void SampleSensor(GHSensor* self);
-void EndSampling(GHSensor* self);
+void GHSensor_BeginSampling(GHSensor* self);
+void GHSensor_SampleSensor(GHSensor* self);
+void GHSensor_EndSampling(GHSensor* self);
 
 #endif
