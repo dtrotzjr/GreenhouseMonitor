@@ -10,19 +10,19 @@
 #include <dht22.h>
 
 typedef struct {	
-	int _powerPin;
-	char* _name;
-	float _humidity;
-	float _temperature;
+	int powerPin;
+	char* name;
+	float humidity;
+	float temperature;
 	
-	float _humidityTotal;
-	float _temperatureTotal;
-	int _totalSamples;
+	float humidityTotal;
+	float temperatureTotal;
+	int totalSamples;
 	
-	dht22 _sensor;
+	dht22 sensor;
 } GHSensor;
 
-GHSensor* GHSensor_Create(int powerPin, int dataPin, const char* name);
+void GHSensor_Init(GHSensor* self, int powerPin, int dataPin, const char* name);
 float GHSensor_GetTemperature(GHSensor* self);
 float GHSensor_GetHumidity(GHSensor* self);
 const char* GHSensor_GetName(GHSensor* self);

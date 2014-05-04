@@ -40,7 +40,7 @@ This example code is in the public domain.
 #include "GHState.h"
   
 const int INITIALIZED_LED_PIN = 13;
-GHState* greenhouseStateMachine;  
+GHState greenhouseStateMachine;  
 
 void setup() { 
     pinMode(INITIALIZED_LED_PIN,OUTPUT);
@@ -49,12 +49,12 @@ void setup() {
     Bridge.begin();
     FileSystem.begin();
     DEBUG_LOG("Starting...")
-    greenhouseStateMachine = GHState_Create();
+    GHState_Init(&greenhouseStateMachine);
     digitalWrite(13, HIGH);
 }
 
 void loop() {
-    GHState_Step(greenhouseStateMachine);
+    GHState_Step(&greenhouseStateMachine);
 }
 
 

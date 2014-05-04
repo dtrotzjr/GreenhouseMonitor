@@ -8,54 +8,52 @@
 #include "GHSensor.h"
 #include "GHState.h"
 
-GHSensor* GHSensor_Create(int powerPin, int dataPin, const char* name) {
-	GHSensor* self = (GHSensor*)calloc(1, sizeof(GHSensor));
-	self->_powerPin = powerPin;
-	pinMode(self->_powerPin,OUTPUT);
-	digitalWrite(self->_powerPin, LOW);
-	self->_sensor.attach(dataPin);
-	String tmp = String(name);
-	int nameLen = tmp.length() + 1;
-	self->_name = (char*)calloc(nameLen, sizeof(char));
-	tmp.toCharArray(self->_name, nameLen);
-	self->_humidity = 0.0f;
-	self->_temperature = 0.0f;
+void GHSensor_Init(GHSensor* self, int powerPin, int dataPin, const char* name) {
+    self->powerPin = powerPin;
+    pinMode(self->powerPin,OUTPUT);
+    digitalWrite(self->powerPin, LOW);    
+    self->sensor.attach(dataPin);
+    String tmp = String(name);
+    int nameLen = tmp.length() + 1;
+    self->name = (char*)calloc(nameLen, sizeof(char));
+    tmp.toCharArray(self->name, nameLen);
+    self->humidity = 0.0f;
+    self->temperature = 0.0f;
     DEBUG_LOG("GHSensor_Create")
 }
 
 float GHSensor_GetTemperature(GHSensor* self){
-	return self->_temperature;
+    return self->temperature;
 }
 
 float GHSensor_GetHumidity(GHSensor* self) {
-	return self->_humidity;
+    return self->humidity;
 }
 
 const char* GHSensor_GetName(GHSensor* self) {
-	return self->_name;
+    return self->name;
 }	
 
 void GHSensor_BeginSampling(GHSensor* self) {
-	self->_humidityTotal = 0.0;
-	self->_temperatureTotal = 0.0;
-	self->_totalSamples = 0;
+    self->humidityTotal = 0.0f;
+    self->temperatureTotal = 0.0f;
+    self->totalSamples = 0;
 }
 
 void GHSensor_SampleSensor(GHSensor* self) {
     // Power on the sensor and take a reading.
-    digitalWrite(self->_powerPin, HIGH);
-	// The sensor needs 2s to initialize
+    digitalWrite(self->powerPin, HIGH);
+    // The sensor needs 2s to initialize
     delay(2000);
-    if (self->_sensor.read() == 0)
-    {
-        self->_humidityTotal += (float)self->_sensor.humidity;
-        self->_temperatureTotal += self->_sensor.fahrenheit();
+    if (self->sensor.read() == 0) {
+        self->humidityTotal += (float)self->sensor.humidity;
+        self->temperatureTotal += self->sensor.fahrenheit();
     }
-    digitalWrite(self->_powerPin, LOW);  
-	self->_totalSamples++;
+    digitalWrite(self->powerPin, LOW);  
+    self->totalSamples++;
 }
 
 void GHSensor_EndSampling(GHSensor* self) {
-	self->_humidity = (self->_humidityTotal / (float)self->_totalSamples);
-	self->_temperature = (self->_temperatureTotal / (float)self->_totalSamples);
+    self->humidity = (self->humidityTotal / (float)self->totalSamples);
+    self->temperature = (self->temperatureTotal / (float)self->totalSamples);
 }

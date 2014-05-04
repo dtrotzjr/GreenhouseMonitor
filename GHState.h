@@ -22,22 +22,22 @@ void _debugLog(const char* logMsg);
 #endif
 
 typedef struct {
-    char _logFilename[MAX_FILENAME_LEN];    
-    unsigned long _lastUpdate;
-    long _hits;
+    char logFilename[MAX_FILENAME_LEN];    
+    unsigned long lastUpdate;
+    long hits;
 
     // Loop state
-    bool _readSensorDataNextLoop;
-    bool _sendToSensorDataToClient;
-    bool _writeSensorDataToFile;
-    bool _freshSensorDataAvailable;
+    bool readSensorDataNextLoop;
+    bool sendToSensorDataToClient;
+    bool writeSensorDataToFile;
+    bool freshSensorDataAvailable;
     
-    YunServer* _server;
-    GHSensor* _innerSensor;
-    GHSensor* _outerSensor;
+    //YunServer* server;
+    GHSensor innerSensor;
+    GHSensor outerSensor;
 } GHState;
 
-GHState* GHState_Create();
+void GHState_Init(GHState* self);
 
 void GHState_Step(GHState* self);
 
