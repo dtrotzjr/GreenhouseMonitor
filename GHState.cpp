@@ -230,6 +230,7 @@ String _getTimeAsString()
         char c = time.read();
         timeString += c;
     }
+    timeString.trim();
     return timeString;
 }
 
