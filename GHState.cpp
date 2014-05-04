@@ -105,14 +105,14 @@ void GHState_Step(GHState* self)
             _sendSensorDataToClient(&self->outerSensor, client);
             client.print("<br>");       
             client.print("<hr>");
-            client.print("<br>Hits so far: ");
-            client.print(self->hits++);
             String imgTag = "<img src=\"";
             String imgName = self->lastImageName;
             imgName.replace("/mnt/","/");
             imgTag += imgName;
             imgTag += "\" alt=\"Inside Greenhouse\" height=50% width=50%>";
             client.print(imgTag);
+            client.print("<br>Hits so far: ");
+            client.print(self->hits++);
         }
         // Close connection and free resources.
         client.stop();
