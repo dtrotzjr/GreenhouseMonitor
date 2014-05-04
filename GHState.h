@@ -24,7 +24,9 @@ void _debugLog(const char* logMsg);
 typedef struct {
     char logFilename[MAX_FILENAME_LEN];    
     unsigned long lastUpdate;
+    unsigned long lastImageTaken;
     long hits;
+    String lastImageName;
     
     YunServer server;
     GHSensor innerSensor;

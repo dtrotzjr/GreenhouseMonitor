@@ -18,6 +18,7 @@ static void _getCurrentLogFilename(char* logFilename);
 static void _appendSensorDataToString(GHSensor* sensor, String* outputLine);
 static void _sendSensorDataToClient(GHSensor* sensor, YunClient client);
 static void _sampleSensors(GHState* self);
+void _takePicture(GHState* self);
 
 const int DHT22_GH_POWER_PIN = 2;
 const int DHT22_GH_SENSE_PIN = 3;
@@ -35,7 +36,8 @@ const int EEPROM_ITERATOR_ADDRESS = EEPROM_MARKER_ADDRESS + 4;
 const int ITERATIONS_PER_FILE = 288;
 
 const char* LOGFILE_PATH = "/mnt/sd/greenhouse/logs/";
-const char* LOGFILE_PREFIX = "greenyun_";
+const char* FILE_PREFIX = "greenyun_";
+const char* IMGFILE_PATH = "/mnt/sd/greenhouse/imgs/";
 
 #ifdef ENABLE_DEBUG_LOG
 void _debugLog(const char* logMsg) {
@@ -49,11 +51,13 @@ void GHState_Init(GHState* self) {
     // Temperature and Humidity Sensor Setup
     GHSensor_Init(&self->innerSensor, DHT22_GH_POWER_PIN, DHT22_GH_SENSE_PIN, "Greenhouse");
     GHSensor_Init(&self->outerSensor, DHT22_OT_POWER_PIN, DHT22_OT_SENSE_PIN, "Outside");
-  
+    self->lastUpdate = 0;
+    self->lastImageTaken = 0;
+    self->hits = 0;
     // Listen for incoming connection only from localhost
     // (no one from the external network could connect)
-   self->server.listenOnLocalhost();
-   self->server.begin();
+    self->server.listenOnLocalhost();
+    self->server.begin();
 }
 
 void GHState_Step(GHState* self) 
@@ -61,6 +65,9 @@ void GHState_Step(GHState* self)
     DEBUG_LOG("Stepping...")
     if (self->lastUpdate == 0 || (millis() - self->lastUpdate) > 300000) 
     {
+        if(self->lastImageTaken == 0 || (millis() - self->lastImageTaken) >
+                1800000)
+            _takePicture(self);
         _sampleSensors(self);
         _getCurrentLogFilename(self->logFilename);
         File dataFile = FileSystem.open(self->logFilename, FILE_APPEND);
@@ -100,6 +107,12 @@ void GHState_Step(GHState* self)
             client.print("<hr>");
             client.print("<br>Hits so far: ");
             client.print(self->hits++);
+            String imgTag = "<img src=\"";
+            String imgName = self->lastImageName;
+            imgName.replace("/mnt/","/");
+            imgTag += imgName;
+            imgTag += "\" alt=\"Inside Greenhouse\" height=50% width=50%>";
+            client.print(imgTag);
         }
         // Close connection and free resources.
         client.stop();
@@ -110,7 +123,7 @@ void GHState_Step(GHState* self)
 
 void _getCurrentLogFilename(char* logFilename) {
     String tmp = String(LOGFILE_PATH);
-    tmp += LOGFILE_PREFIX;
+    tmp += FILE_PREFIX;
     tmp += _getFilePostFix();
     tmp += ".csv";
     tmp.toCharArray(logFilename, MAX_FILENAME_LEN);
@@ -186,4 +199,18 @@ long _getTimeAsLong()
         timeString += c;
     }
     return timeString.toInt();
+}
+
+void _takePicture(GHState* self)
+{
+    String command = "fswebcam -r 1280x960 ";
+    self->lastImageName  = IMGFILE_PATH;
+    self->lastImageName += FILE_PREFIX;
+    self->lastImageName += _getFilePostFix();
+    self->lastImageName += "_";
+    self->lastImageName += _getTimeAsLong();
+    self->lastImageName += ".png";
+    command += self->lastImageName;
+    Process proc;
+    proc.runShellCommand(command);
 }
