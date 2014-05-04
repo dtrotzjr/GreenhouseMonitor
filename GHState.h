@@ -25,12 +25,6 @@ typedef struct {
     char logFilename[MAX_FILENAME_LEN];    
     unsigned long lastUpdate;
     long hits;
-
-    // Loop state
-    bool readSensorDataNextLoop;
-    bool sendToSensorDataToClient;
-    bool writeSensorDataToFile;
-    bool freshSensorDataAvailable;
     
     YunServer server;
     GHSensor innerSensor;
