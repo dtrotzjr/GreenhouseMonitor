@@ -19,7 +19,6 @@ void GHSensor_Init(GHSensor* self, int powerPin, int dataPin, const char* name) 
     tmp.toCharArray(self->name, nameLen);
     self->humidity = 0.0f;
     self->temperature = 0.0f;
-    DEBUG_LOG("GHSensor_Create")
 }
 
 float GHSensor_GetTemperature(GHSensor* self){
