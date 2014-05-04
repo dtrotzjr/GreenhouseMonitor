@@ -32,7 +32,7 @@ typedef struct {
     bool writeSensorDataToFile;
     bool freshSensorDataAvailable;
     
-    //YunServer* server;
+    YunServer server;
     GHSensor innerSensor;
     GHSensor outerSensor;
 } GHState;

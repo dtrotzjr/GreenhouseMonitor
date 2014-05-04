@@ -7,8 +7,8 @@
 #include "GHState.h"
 #include "GHSensor.h"
 
-// #include <YunServer.h>
-// #include <YunClient.h> 
+#include <YunServer.h>
+#include <YunClient.h> 
 #include <FileIO.h>
 
 static String _getFilePostFix();
@@ -52,9 +52,8 @@ void GHState_Init(GHState* self) {
   
     // Listen for incoming connection only from localhost
     // (no one from the external network could connect)
-//    self->server = new YunServer();
-//    self->server->listenOnLocalhost();
-//    self->server->begin();
+   self->server.listenOnLocalhost();
+   self->server.begin();
     DEBUG_LOG("GHState_Create")  
 }
 
@@ -68,10 +67,6 @@ void GHState_Step(GHState* self)
         self->readSensorDataNextLoop = false;
         self->freshSensorDataAvailable = true;
         delay(50);
-        if(self->readSensorDataNextLoop) {DEBUG_LOG("A OUCH!!!")} else {DEBUG_LOG("A GOOD!!!")}
-        
-        if(self->readSensorDataNextLoop) {DEBUG_LOG("A OUCH!!!")} else {DEBUG_LOG("A GOOD!!!")}
-        
     } 
     else if (self->freshSensorDataAvailable) 
     {
@@ -80,27 +75,27 @@ void GHState_Step(GHState* self)
         if (self->sendToSensorDataToClient) 
         {
             DEBUG_LOG("sendToSensorDataToClient")
-            // YunClient client = self->server->accept();
-//             if (client) 
-//             {
-//                 // get the time from the server:
-//                 String timeString = _getTimeAsString();
-//             
-//                 client.print("Current time on the Yun: ");
-//                 client.println(timeString);      
-//                 client.print("<hr>");      
-//                 _sendSensorDataToClient(self->innerSensor, client);
-//                 client.print("<br>"); 
-//                 _sendSensorDataToClient(self->outerSensor, client);
-//                 client.print("<br>");       
-//                 client.print("<hr>");
-//                 client.print("<br>Hits so far: ");
-//                 client.print(self->hits);
-//             }
-//       
-//             // Close connection and free resources.
-//             client.stop();
-//             self->hits++;      
+            YunClient client = self->server.accept();
+            if (client) 
+            {
+                // get the time from the server:
+                String timeString = _getTimeAsString();
+            
+                client.print("Current time on the Yun: ");
+                client.println(timeString);      
+                client.print("<hr>");      
+                _sendSensorDataToClient(&self->innerSensor, client);
+                client.print("<br>"); 
+                _sendSensorDataToClient(&self->outerSensor, client);
+                client.print("<br>");       
+                client.print("<hr>");
+                client.print("<br>Hits so far: ");
+                client.print(self->hits);
+            }
+      
+            // Close connection and free resources.
+            client.stop();
+            self->hits++;      
             self->sendToSensorDataToClient = false;
         }
       
@@ -109,24 +104,19 @@ void GHState_Step(GHState* self)
             DEBUG_LOG("writeSensorDataToFile")
             _getCurrentLogFilename(self->logFilename);
             File dataFile =
-                FileSystem.open(self->logFilename/*"/mnt/sd/greenhouse/logs/test.log"*/, FILE_APPEND);
+                FileSystem.open(self->logFilename, FILE_APPEND);
             if (dataFile) 
             {
                 String outputLine = "";
                 outputLine += _getTimeAsLong();
-                outputLine += ", ";
+                outputLine += ",";
                 outputLine += _getTimeAsString();
-                outputLine += ", ";                                
+                outputLine += ",";                                
                 _appendSensorDataToString(&self->innerSensor, &outputLine);
-                outputLine += ", ";  
+                outputLine += ",";  
                 _appendSensorDataToString(&self->outerSensor, &outputLine);  
                 dataFile.println(outputLine);
                 self->lastUpdate = millis();          
-            }
-            else
-            {
-                DEBUG_LOG("Failed to open file")
-                DEBUG_LOG(self->logFilename)
             }
             dataFile.close();
             self->writeSensorDataToFile = false;
@@ -136,34 +126,27 @@ void GHState_Step(GHState* self)
     else 
     {
         DEBUG_LOG("*****")
-        // YunClient client = self->server->accept();
-//         if (client) 
-//         {
-//             // read the command
-//             String command = client.readString();
-//             command.trim();        //kill whitespace
-//             // is "temperature" command?
-//             if (command == "temperature") 
-//             {
-//                 DEBUG_LOG("web client wants update")
-//                 static int i = 0;
-//                 client.print("Sensing...");
-//                 client.print(i++);
-//                 self->readSensorDataNextLoop = true;
-//                 self->sendToSensorDataToClient = true;
-//             }
-//             client.stop();
-//         }    
-        if (self->lastUpdate == 0 || (millis() - self->lastUpdate) > 2000/*300000*/) 
+        YunClient client = self->server.accept();
+        if (client) 
+        {
+            String command = client.readString();
+            command.trim();
+            if (command == "temperature") 
+            {
+                DEBUG_LOG("web client wants update")
+                self->readSensorDataNextLoop = true;
+                self->sendToSensorDataToClient = true;
+            }
+            client.stop();
+        }    
+        if (self->lastUpdate == 0 || (millis() - self->lastUpdate) > 300000) 
         {
             DEBUG_LOG("*** time to update ***")
             self->readSensorDataNextLoop = true;
             self->writeSensorDataToFile = true;      
         }
     }
-    if(self->readSensorDataNextLoop) {DEBUG_LOG("B OUCH!!!")} else {DEBUG_LOG("B GOOD!!!")}    
     delay(50); // Poll every 50ms
-    if(self->readSensorDataNextLoop) {DEBUG_LOG("C OUCH!!!")} else {DEBUG_LOG("C GOOD!!!")}
 }
 
 void _getCurrentLogFilename(char* logFilename) {
@@ -201,18 +184,18 @@ String _getFilePostFix() {
     return timeString;
 }
 
-// void _sendSensorDataToClient(GHSensor* sensor, YunClient client)
-// {
-//     client.print("<br>");
-//     client.print(GHSensor_GetName(sensor)); 
-//     client.print(" Humidity (%): ");
-//     client.print(GHSensor_GetHumidity(sensor));
-//     client.print("<br>");
-//     client.print(GHSensor_GetName(sensor)); 
-//     client.print("Temperature: ");
-//     client.print(GHSensor_GetTemperature(sensor));
-//     client.print(" °F");
-// }
+void _sendSensorDataToClient(GHSensor* sensor, YunClient client)
+{
+    client.print("<br>");
+    client.print(GHSensor_GetName(sensor)); 
+    client.print(" Humidity (%): ");
+    client.print(GHSensor_GetHumidity(sensor));
+    client.print("<br>");
+    client.print(GHSensor_GetName(sensor)); 
+    client.print("Temperature: ");
+    client.print(GHSensor_GetTemperature(sensor));
+    client.print(" °F");
+}
 
 void _appendSensorDataToString(GHSensor* sensor, String* outputLine)
 {
