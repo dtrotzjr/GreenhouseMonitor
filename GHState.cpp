@@ -213,4 +213,5 @@ void _takePicture(GHState* self)
     command += self->lastImageName;
     Process proc;
     proc.runShellCommand(command);
+    self->lastImageTaken = millis();
 }
